@@ -20,15 +20,40 @@ import java.net.URL;
 import java.rmi.RemoteException;
 
 public class Application {
-    public static void main(String arg[]) throws MalformedURLException, ServiceException, RemoteException {
-        String rxhost = "http://mor.nlm.nih.gov";
-        String rxURI = rxhost + "/axis/services/RxNormDBService";
 
-// Locate the RxNorm API web service
-        URL rxURL = new URL(rxURI);
-        DBManagerService rxnormService = new DBManagerServiceLocator();
-        DBManager dbmanager = rxnormService.getRxNormDBService(rxURL);
-        HistoricalNDCTime[] ndCs = dbmanager.getAllHistoricalNDCs("1668240", 0);
+    private static String rxhost = "http://mor.nlm.nih.gov";
+    private static String rxURI = rxhost + "/axis/services/RxNormDBService";
+    private static URL rxURL = null;
+    private static DBManagerService rxnormService = null;
+    private static DBManager dbmanager = null;
+    static {
+        try {
+            rxURL = new URL(rxURI);
+            rxnormService = new DBManagerServiceLocator();
+            dbmanager = rxnormService.getRxNormDBService(rxURL);
+        } catch (ServiceException | MalformedURLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Unable to load data");
+        }
+    }
+
+    public static void main(String arg[]) throws MalformedURLException, ServiceException, RemoteException {
+        getRXCUI("65597011590");
+    }
+
+
+    private static void getRXCUI(String ndc) throws RemoteException {
+        // Locate the RxNorm API web service
+        String[] ndCs = dbmanager.findRxcuiById("NDC", ndc);
+        for(String rxcuid : ndCs) {
+                System.out.println("rxcuid = " + rxcuid);
+        }
+    }
+
+
+    private static void getNDC(String rxcui) throws RemoteException {
+        // Locate the RxNorm API web service
+        HistoricalNDCTime[] ndCs = dbmanager.getAllHistoricalNDCs(rxcui, 0);
         for(HistoricalNDCTime historicalNDCTime : ndCs) {
             NDCTime[] ndcTimes = historicalNDCTime.getNdcTimes();
             for (NDCTime ndcTime : ndcTimes) {
@@ -36,4 +61,5 @@ public class Application {
             }
         }
     }
+
 }
